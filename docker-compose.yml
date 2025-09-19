@@ -1,0 +1,76 @@
+version: '3'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: arch-ai-review-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: zszq,666
+      MYSQL_DATABASE: arch_ai_review
+      MYSQL_USER: dora
+      MYSQL_PASSWORD: zszq,666
+    volumes:
+      - mysql-data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7.0
+    container_name: arch-ai-review-redis
+    restart: always
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arch-ai-review-backend
+    restart: always
+    depends_on:
+      - mysql
+      - redis
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/arch_ai_review?useSSL=false&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+      SPRING_DATASOURCE_USERNAME: dora
+      SPRING_DATASOURCE_PASSWORD: zszq,666
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_SQL_INIT_MODE: never
+    volumes:
+      - uploads:/app/uploads
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ../arch-ai-review-web
+      dockerfile: Dockerfile
+    container_name: arch-ai-review-frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  redis-data:
+  uploads:
+
